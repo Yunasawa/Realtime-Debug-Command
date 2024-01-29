@@ -125,8 +125,11 @@ public class DebugCommandExecuter : MonoBehaviour
             CommandInput.text = "/";
             CommandInput.caretPosition = 1;
             CommandInput.onValueChanged?.Invoke(CommandInput.text);
+
+            CommandLog.SetActive(true);
+            CommandLog.SetActiveAllChildren(true);
         }
-    } // ✔
+    } // ✔✔
     public void ActivateExtensionPanels(bool enable)
     {
         CommandLog.SetActive(enable);
@@ -344,7 +347,10 @@ public class DebugCommandExecuter : MonoBehaviour
             }
             else Debug.Log("This is not a command");
         }
-    } // ✔✔
+
+        CommandPanel.SetActive(false);
+        //CommandInput.onDeselect?.Invoke("");
+    } // ✔✔✔
     public void UpdateSuggestionPanelPosition()
     {
         SuggestionPanel.anchoredPosition = new((int)Input.compositionCursorPos.x - 10, SuggestionPanel.anchoredPosition.y);
@@ -391,6 +397,13 @@ public class DebugCommandExecuter : MonoBehaviour
     } // ✔
     public void ShowLog(LogType type, string message)
     {
+        // Disable all empty logs
+        foreach (var child in CommandLogs)
+        {
+            if (!_activateCommandLog.ContainsKey(child.gameObject)) child.gameObject.SetActive(false);
+        }
+
+        // Object-Pooling for logs
         CommandLog.MoveChildToLast(0);
         CommandLogs = CommandLogs.Skip(1).Concat(CommandLogs.Take(1)).ToList();
 
@@ -398,6 +411,7 @@ public class DebugCommandExecuter : MonoBehaviour
         tmp.text = message;
         tmp.color = Color.white;
 
+        // Coroutine for enable/disable logs
         Coroutine coroutine = StartCoroutine(ShowCommandMessage(tmp.gameObject));
         _activateCommandLog.Add(tmp.gameObject, coroutine);
 
@@ -405,7 +419,7 @@ public class DebugCommandExecuter : MonoBehaviour
 
         CommandInput.text = "";
 
-    } // ✔✔✔
+    } // ✔✔✔✔
     public void UpdateLogPanelChildrenAmount()
     {
         CommandLogs.Clear();
