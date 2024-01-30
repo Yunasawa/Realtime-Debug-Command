@@ -35,7 +35,7 @@ public class DebugCommandExecuter : MonoBehaviour
     int _oldCaretPosition = 0;
     public int _currentHistory = -1;
 
-    [SerializeField] private SerializableDictionary<GameObject, Coroutine> _activateCommandLog = new();
+    [SerializeField] private Dictionary<GameObject, Coroutine> _activateCommandLog = new();
     #endregion
 
     #region ▶ MonoBehaviour
@@ -121,6 +121,8 @@ public class DebugCommandExecuter : MonoBehaviour
         CommandPanel.gameObject.SetActive(enable);
         if (enable)
         {
+            this.gameObject.SetActive(true);
+
             CommandInput.Select();
             CommandInput.text = "/";
             CommandInput.caretPosition = 1;
@@ -350,6 +352,7 @@ public class DebugCommandExecuter : MonoBehaviour
 
         CommandPanel.SetActive(false);
         //CommandInput.onDeselect?.Invoke("");
+        this.gameObject.SetActive(false);
     } // ✔✔✔
     public void UpdateSuggestionPanelPosition()
     {
@@ -412,7 +415,7 @@ public class DebugCommandExecuter : MonoBehaviour
         tmp.color = Color.white;
 
         // Coroutine for enable/disable logs
-        Coroutine coroutine = StartCoroutine(ShowCommandMessage(tmp.gameObject));
+        Coroutine coroutine = _editor.StartCoroutine(ShowCommandMessage(tmp.gameObject));
         _activateCommandLog.Add(tmp.gameObject, coroutine);
 
         WriteCommandToHistory(type);
