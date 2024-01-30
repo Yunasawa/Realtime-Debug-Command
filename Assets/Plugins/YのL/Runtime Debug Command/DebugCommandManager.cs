@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class DebugCommandManager : MonoBehaviour
 {
-    [HideInInspector] public DebugCommandList Commands = new();
+    [HideInInspector] public DebugCommandList Commands;
     private DebugCommandExecuter _executer;
 
     public GameObject CommandPanel;
@@ -32,29 +33,8 @@ public class DebugCommandManager : MonoBehaviour
 
     public void UpdateCommandLibrary()
     {
-        Commands.Keys = new() { "detector" };
-        Commands.Keys.AddRange(new List<string>() 
-        { 
-            "time", "debug"
-        });
-    }
-}
-
-[System.Serializable]
-public class DebugCommandList
-{
-    public List<string> Keys = new();
-
-    public DebugCommandList() { }
-
-    public DebugCommand GetDetector() => new DC_Detector();
-    public DebugCommand CreateCommand(string key)
-    {
-        switch (key)
-        {
-            case "debug": return new DC_Debug();
-            case "time": return new DC_Time();
-        }
-        return new DC_Detector();
+        Commands = new(this);
+        Commands.Keys = new[] { "detector" };
+        Commands.Keys = Commands.Keys.Concat(DebugCommandObject.CommandList).ToArray();
     }
 }

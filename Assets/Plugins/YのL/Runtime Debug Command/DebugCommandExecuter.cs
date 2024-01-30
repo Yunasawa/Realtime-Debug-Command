@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using YNL.Extension.Method;
 using YNL.Utilities;
 
@@ -81,10 +82,12 @@ public class DebugCommandExecuter : MonoBehaviour
         {
             if (_editor.EnableRemoveDuplicated) RemoveDuplicatedChar(_editor.RemovableCharacters.ToCharArray());
             if (_editor.EnableRemoveUselessSpace) RemoveDuplicatedUselessSpace();
+
+            UpdateSuggestionPanelPosition();
         }
         else
         {
-
+            ReselectCommandInput();
         }
 
         if (Input.GetKeyDown(KeyCode.Return)) StartExecuteCommand();
@@ -96,8 +99,6 @@ public class DebugCommandExecuter : MonoBehaviour
         _oldCaretPosition = CommandInput.caretPosition;
 
         CommandPrompt.gameObject.SetActive(_editor.EnableSuggestionPrompt);
-
-        //CurrentCommand.Update();
     }
 
     public void OnChangeValue(string text)
@@ -105,11 +106,10 @@ public class DebugCommandExecuter : MonoBehaviour
         SeparateInputIntoWords(text);
         UpdateCurrentNodeOnPressingSpace(); 
         IdentifyRootCommand();
-        SuggestionCommandSet = GetSuggestionList(CurrentCommand.CommandNodes[CurrentNode].Suggestions, CurrentCommand.CommandNodes[CurrentNode].StartWith);
+        SuggestionCommandSet = GetSuggestionList(CurrentCommand.CommandNodes[CurrentNode].Suggestions, CurrentCommand.CommandNodes[CurrentNode].MustStartWith);
         if (_editor.EnableSuggestionPanel)
         {
             ShowCommandSuggestion();
-            UpdateSuggestionPanelPosition();
         }
         if (_editor.EnableSuggestionPrompt) UpdatePromptText();
     }
@@ -136,6 +136,11 @@ public class DebugCommandExecuter : MonoBehaviour
     {
         CommandLog.SetActive(enable);
         SuggestionPanel.SetActive(enable);
+    } // ✔
+    public void ReselectCommandInput()
+    {
+        EventSystem.current.SetSelectedGameObject(null);
+        EventSystem.current.SetSelectedGameObject(CommandInput.gameObject);
     } // ✔
     public void SeparateInputIntoWords(string text)
     {
@@ -184,10 +189,10 @@ public class DebugCommandExecuter : MonoBehaviour
             }
         }
 
-        if (CurrentNode >= CurrentCommand.CommandNodes.Count)
+        if (CurrentNode >= CurrentCommand.CommandNodes.Length)
         {
             //Debug.Log("Changed On Update 4");
-            CurrentNode = CurrentCommand.CommandNodes.Count - 1;
+            CurrentNode = CurrentCommand.CommandNodes.Length - 1;
         }
 
         if (oldNode != CurrentNode) DebugCommandAction.OnChangeNode?.Invoke();
@@ -199,10 +204,10 @@ public class DebugCommandExecuter : MonoBehaviour
         {
             //Debug.Log("Changed On Position 1");
             CurrentNode = Array.IndexOf(InputCommandSet, word);
-            if (CurrentNode >= CurrentCommand.CommandNodes.Count)
+            if (CurrentNode >= CurrentCommand.CommandNodes.Length)
             {
                 //Debug.Log("Changed On Position 2");
-                CurrentNode = CurrentCommand.CommandNodes.Count - 1;
+                CurrentNode = CurrentCommand.CommandNodes.Length - 1;
             }
         }
     } // ✔✔
@@ -222,7 +227,7 @@ public class DebugCommandExecuter : MonoBehaviour
             CurrentCommand = _manager.Commands.GetDetector();
         }
     } // ✔
-    public string[] GetSuggestionList(List<string> originList, bool startWith)
+    public string[] GetSuggestionList(string[] originList, bool startWith)
     {
         if (CommandInput.text.IsNullOrEmpty()) return new string[0];
 
@@ -284,8 +289,8 @@ public class DebugCommandExecuter : MonoBehaviour
             if (CurrentCommand == _manager.Commands.GetDetector()) InputCommandSet[^1] = SuggestionCommandSet[0];
             else
             {
-                if (CurrentNode == CurrentCommand.CommandNodes.Count - 1) InputCommandSet[^1] = GetSuggestionList(CurrentCommand.CommandNodes[CurrentNode].Suggestions, CurrentCommand.CommandNodes[CurrentNode].StartWith)[0];
-                else InputCommandSet[^1] = GetSuggestionList(CurrentCommand.CommandNodes[CurrentNode - 1].Suggestions, CurrentCommand.CommandNodes[CurrentNode - 1].StartWith)[0];
+                if (CurrentNode == CurrentCommand.CommandNodes.Length - 1) InputCommandSet[^1] = GetSuggestionList(CurrentCommand.CommandNodes[CurrentNode].Suggestions, CurrentCommand.CommandNodes[CurrentNode].MustStartWith)[0];
+                else InputCommandSet[^1] = GetSuggestionList(CurrentCommand.CommandNodes[CurrentNode - 1].Suggestions, CurrentCommand.CommandNodes[CurrentNode - 1].MustStartWith)[0];
             }
             CommandInput.text = MergeStringArrayToText(InputCommandSet);
             CommandInput.MoveToEndOfLine(false, false);
@@ -343,17 +348,23 @@ public class DebugCommandExecuter : MonoBehaviour
                 Debug.Log($"<color=#FF7070><b>Failed:</b></color> Command is empty.");
                 return;
             }
-            else if (CommandInput.text[0] == '/')
+            else
             {
                 CurrentCommand.Execute(InputCommandSet);
             }
-            else Debug.Log("This is not a command");
+            //else
+            //{
+            //    Debug.Log("This is not a command");
+            //}
         }
 
         CommandPanel.SetActive(false);
-        //CommandInput.onDeselect?.Invoke("");
+        if (_activateCommandLog.Count <= 0 && !CommandInput.isFocused) CommandLog.SetActive(false);
+        SuggestionPanel.SetActive(false);
         this.gameObject.SetActive(false);
-    } // ✔✔✔
+
+        _currentHistory = -1;
+    } // ✔✔✔✔
     public void UpdateSuggestionPanelPosition()
     {
         SuggestionPanel.anchoredPosition = new((int)Input.compositionCursorPos.x - 10, SuggestionPanel.anchoredPosition.y);
@@ -416,13 +427,18 @@ public class DebugCommandExecuter : MonoBehaviour
 
         // Coroutine for enable/disable logs
         Coroutine coroutine = _editor.StartCoroutine(ShowCommandMessage(tmp.gameObject));
-        _activateCommandLog.Add(tmp.gameObject, coroutine);
+        if (_activateCommandLog.ContainsKey(tmp.gameObject))
+        {
+            _editor.StopCoroutine(_activateCommandLog[tmp.gameObject]);
+            _activateCommandLog[tmp.gameObject] = coroutine;
+        }
+        else _activateCommandLog.Add(tmp.gameObject, coroutine);
 
         WriteCommandToHistory(type);
 
         CommandInput.text = "";
 
-    } // ✔✔✔✔
+    } // ✔✔✔✔✔
     public void UpdateLogPanelChildrenAmount()
     {
         CommandLogs.Clear();
@@ -462,22 +478,26 @@ public class DebugCommandExecuter : MonoBehaviour
             _currentHistory++;
             if (_currentHistory >= CommandHistory.Count) _currentHistory = 0;
             CommandInput.text = CommandHistory[_currentHistory];
+
+            CommandInput.MoveToEndOfLine(false, false);
         }
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             if (_currentHistory <= 0) _currentHistory = CommandHistory.Count - 1;
             else _currentHistory--;
             CommandInput.text = CommandHistory[_currentHistory];
-        } // ✔
-    } // ✔
+
+            CommandInput.MoveToEndOfLine(false, false);
+        }
+    } // ✔✔
     public IEnumerator ShowCommandMessage(GameObject obj)
     {
         CommandLog.SetActive(true);
         obj.SetActive(true);
         yield return new WaitForSeconds(_editor.TimeToHideCommandMessage);
-        obj.SetActive(false);
+        if (!CommandInput.isFocused) obj.SetActive(false);
         if (_activateCommandLog.ContainsKey(obj)) _activateCommandLog.Remove(obj);
-        if (_activateCommandLog.Count <= 0) CommandLog.SetActive(false);
-    } // ✔✔
+        if (_activateCommandLog.Count <= 0 && !CommandInput.isFocused) CommandLog.SetActive(false);
+    } // ✔✔✔
     #endregion
 }

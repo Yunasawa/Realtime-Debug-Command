@@ -13,11 +13,6 @@ public static class DebugCommandAction
     public static Action<string, string[]> OnExecuteCommand;
 }
 
-public static class DebugCommandCode
-{
-    public const string DetectorKey = "detector";
-}
-
 public enum LogType
 {
     Executed, Failed

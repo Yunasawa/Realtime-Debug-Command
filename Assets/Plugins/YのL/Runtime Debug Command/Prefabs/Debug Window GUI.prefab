@@ -63,7 +63,7 @@ MonoBehaviour:
   RemoveDuplicatedCommandHistory: 1
   SaveWrongCommandToHistory: 1
   MaximumCommandHistory: 10
-  TimeToHideCommandMessage: 10
+  TimeToHideCommandMessage: 2
 --- !u!1 &882943052416765426
 GameObject:
   m_ObjectHideFlags: 0
@@ -143,8 +143,6 @@ MonoBehaviour:
   - /debug warning this is a warning
   - /debug error oh helll an error
   _currentHistory: -1
-  _activateCommandLog:
-    keys: []
 --- !u!1 &2615610138454524842
 GameObject:
   m_ObjectHideFlags: 0
@@ -297,7 +295,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 234881023
-  m_fontColor: {r: 1, g: 1, b: 1, a: 0.050980393}
+  m_fontColor: {r: 1, g: 1, b: 1, a: 0.101960786}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
