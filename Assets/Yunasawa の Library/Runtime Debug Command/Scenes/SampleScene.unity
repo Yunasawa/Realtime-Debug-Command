@@ -261,6 +261,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 565781289699122292, guid: bd547af46e3af6e46a52e09159b42ba9, type: 3}
+      propertyPath: m_text
+      value: ...
+      objectReference: {fileID: 0}
     - target: {fileID: 2466889608627738006, guid: bd547af46e3af6e46a52e09159b42ba9, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
@@ -372,6 +376,14 @@ PrefabInstance:
     - target: {fileID: 5865810909459250331, guid: bd547af46e3af6e46a52e09159b42ba9, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7261045029945361533, guid: bd547af46e3af6e46a52e09159b42ba9, type: 3}
+      propertyPath: MaximumCommandHistory
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7261045029945361533, guid: bd547af46e3af6e46a52e09159b42ba9, type: 3}
+      propertyPath: TimeToHideCommandMessage
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 8728414263855317348, guid: bd547af46e3af6e46a52e09159b42ba9, type: 3}
       propertyPath: m_SizeDelta.x
